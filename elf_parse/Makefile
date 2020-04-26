@@ -4,7 +4,7 @@ SRC_PATH = src
 BUILD_PATH = build
 BIN_PATH = $(BUILD_PATH)/bin
 
-BIN_NAME = delice_pxe
+BIN_NAME = parse_elf
 
 SRC_EXT = cc
 

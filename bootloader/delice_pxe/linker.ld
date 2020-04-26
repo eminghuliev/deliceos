@@ -1,4 +1,4 @@
-ENTRY(entry);
+ENTRY(start_kernel);
 SECTIONS
 {    
     . = 0x10000;
@@ -24,6 +24,7 @@ SECTIONS
         *(.iplt*);
         *(.igot*);
         *(.rel*);
+        *(.debug*);
         *(.comment);
     }
 }

@@ -33,13 +33,8 @@ _start:
 [BITS 32]
 
 entry:
-    xor eax, eax
-    mov edx, 0xb8000
-    mov al, 0x42
-    mov ah, 0x0f
-    mov [edx], ax
-    hlt
-
+    mov esp, 0x7c00
+    jmp entry_p
 
 align 8
 gdt_base:
@@ -53,3 +48,6 @@ gdt_desc:
 
 times 510 - ($-$$) db 0
 dw 0xaa55
+
+entry_p:
+    incbin "../../elf_parse/flat.bin"

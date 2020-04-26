@@ -1,6 +1,6 @@
 #include <parser.h>
 const char *flat = "./flat.bin";
-const char *kernel_file = "./deliceos.elf";
+const char *kernel_file = "../bootloader/delice_pxe/build/pxe_boot.bin";
 
 
 int main(){

@@ -14,7 +14,6 @@ compiler_args = ['-m64',
 incdir = include_directories('includes')
 source_files = ['src/init.cc',
                 'src/serial.cc',
-                'src/atomic.cc',
                 'src/printf.cc'
                 ]
 

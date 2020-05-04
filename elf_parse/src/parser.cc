@@ -1,4 +1,5 @@
 #include <parser.h>
+#include <cstdio>
 const char *flat = "./flat.bin";
 const char *kernel_file = "../bootloader/delice_pxe/build/pxe_boot.bin";
 
@@ -7,7 +8,7 @@ int main(){
     File file(flat);
     uint8_t *faddr = file.openfile(kernel_file);
     //Initialize ELF header
-    Elf32_Ehdr *hdr = (Elf32_Ehdr*)faddr;
+    Elf64_Ehdr *hdr = (Elf64_Ehdr*)faddr;
     if(hdr->e_ident[1] != 'E' ||
        hdr->e_ident[2] != 'L' ||
        hdr->e_ident[3] != 'F'){
@@ -15,7 +16,7 @@ int main(){
         exit(1);
     }
     //Get section offset in the ELF header
-    uint32_t sh_off = hdr->e_shoff;
+    uint64_t sh_off = hdr->e_shoff;
     //Get the number of entries in section header table
     uint8_t entry_sh = hdr->e_shnum;
 
@@ -26,11 +27,13 @@ int main(){
         exit(1);
     }
     for (int ii = 0; ii < entry_sh; ii++){
-        Elf32_Shdr *shdr = 
-            (Elf32_Shdr*)(faddr + sh_off + (sizeof(Elf32_Shdr) * ii));
+        Elf64_Shdr *shdr = 
+            (Elf64_Shdr*)(faddr + sh_off + (sizeof(Elf64_Shdr) * ii));
             if(shdr->sh_offset > 0 && (shdr->sh_offset < sh_off)) {
-                uint32_t offset = shdr->sh_offset;
-                uint32_t size = shdr->sh_size;
+
+                uint64_t offset = shdr->sh_offset;
+                uint64_t size = shdr->sh_size;
+                printf("offset %lx\n", offset);
                 fheader.push_back(initheader(offset,size));
             }
     }
@@ -42,12 +45,12 @@ int main(){
      //Get offset of last section.
      std::vector<FileHeader>::iterator maxoffset = 
          std::max_element(fheader.begin(), fheader.end(), comparator);
-     uint32_t image_base = minoffset->offset;
-     uint32_t image_end = maxoffset->offset + maxoffset->size;
+     uint64_t image_base = minoffset->offset;
+     uint64_t image_end = maxoffset->offset + maxoffset->size;
 
 
      //Write bytes from first until last section
-     for(uint32_t ii = image_base; ii < image_end; ii++){
+     for(uint64_t ii = image_base; ii < image_end; ii++){
         uint8_t *file_block = (faddr + ii);
         file.writefile(file_block);
      }

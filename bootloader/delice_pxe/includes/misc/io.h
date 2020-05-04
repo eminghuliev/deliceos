@@ -1,4 +1,6 @@
-#include <types.h>
+#ifndef _IO_H
+#define _IO_H
+#include <cstdint>
 namespace x86::io {
     inline void outb(int16_t port, int8_t val){
         asm volatile("outb %%al, %%dx;"
@@ -14,3 +16,4 @@ namespace x86::io {
         return ret;
     }
 }
+#endif

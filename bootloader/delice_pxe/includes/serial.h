@@ -4,7 +4,7 @@
 #include <misc/io.h>
 #define PORT 0x3f8
 
-namespace x86::serial {
+namespace serial {
 
 struct ComDevices {
     uint16_t device[4];

@@ -14,7 +14,12 @@ _start:
     in al, 0x92
     or al, 2
     out 0x92, al
-    
+.wait_for_stack:
+    pause
+    xor  al, al
+    lock xchg byte [stack_wait], al
+    test al, al
+    jz   short .wait_for_stack
     ; Set stack segment to 0
     xor dx, dx
     mov ss, dx
@@ -74,13 +79,11 @@ L1:
     ; Compare ebx with continuation value
     cmp ebx, 0
     jnz L1
-
     ; Move count of entries to buffer to use in PXE kernel
     ; our kernel can read count value from 0x14000 (0x1000 * 16 + 0x4000)
     xor edx, edx
     mov edx, E820_ADDR ; offset in es segment address is 0x4000
     mov dword[es: edx + 0x200], ebp ; es segment address is 0x1000
-
     ret
 
 [BITS 32]
@@ -88,6 +91,11 @@ entry:
     ; Initialize Page Table
     call early_page
 
+    mov edi, 0xfee00020
+    mov eax, dword[edi]
+    shr eax, 24
+    mov ebp, eax
+    
     ; Disable IRQs
     mov al, 0xFF
     out 0xA1, al
@@ -104,7 +112,6 @@ entry:
 
 ; Set-up Long Mode
 setup_lm:
-    
     ; Set NXE and LME
     mov edx, 0
     mov eax, 0x00000900
@@ -113,7 +120,6 @@ setup_lm:
     mov eax, cr0
     or  eax,  (1 << 31)
     mov cr0, eax
-    
     ; Load the 64-bit long mode GDT
     lgdt [lmgdt]
     ; Long jump to enable long mode!
@@ -128,9 +134,7 @@ do_memset_zero:
 ; Fill Page Directory
 fill_pd:
     xor eax, eax
-    or  eax, PAGE_PRESENT
-    or  eax, PAGE_WRITE
-    or  eax, PAGE_SIZE
+    or  eax, PAGE_PRESENT | PAGE_WRITE | PAGE_SIZE
     or  eax, ebx
     mov dword[edi], eax
     add edi, 8
@@ -138,6 +142,7 @@ fill_pd:
     loop fill_pd
     ret
 
+; Initialize 4 GB paging (each page frame is 2mb)
 early_page:    
     ; Clear 1024 * 4 bytes in PML4
     mov edi, FIRST_PML4_BASE
@@ -146,27 +151,71 @@ early_page:
     
     ; Initialize PML4 entry with present, write flags and PDPT base address
     xor eax, eax
-    or  eax, PAGE_PRESENT
-    or  eax, PAGE_WRITE
+    or  eax, PAGE_PRESENT | PAGE_WRITE
     or  eax, FIRST_PDPT_BASE
     mov edi, FIRST_PML4_BASE
     mov dword[edi], eax
     
+    ; Initialize PML4 - second entry with present write flags and PDPT base addr
+    xor eax, eax
+    or  eax, PAGE_PRESENT | PAGE_WRITE
+    or  eax, FIRST_PDPT_BASE + 0x8
+    mov edi, FIRST_PML4_BASE + 0x8
+    mov dword[edi], eax
+
+    ; Initialize PML4 - third entry with present write flags and PDPT base addr
+    xor eax, eax
+    or  eax, PAGE_PRESENT | PAGE_WRITE
+    or  eax, FIRST_PDPT_BASE + 0x10
+    mov edi, FIRST_PML4_BASE + 0x10
+    mov dword[edi], eax
+
+    ; Initialize PML4 - forth entry with present write flags and PDPT base addr
+    xor eax, eax
+    or  eax, PAGE_PRESENT | PAGE_WRITE
+    or  eax, FIRST_PDPT_BASE + 0x18
+    mov edi, FIRST_PML4_BASE + 0x18
+    mov dword[edi], eax
+
     ; Initialize PDPT entry with present, write flags and PD base address
     xor eax, eax
-    or  eax, PAGE_PRESENT
-    or  eax, PAGE_WRITE
+    or  eax, PAGE_PRESENT | PAGE_WRITE
     or  eax, FIRST_PD_BASE
     mov edi, FIRST_PDPT_BASE
     mov dword[edi], eax
 
+    ; Initialize PDPT entry for second entry
+    xor eax, eax
+    or  eax, PAGE_PRESENT | PAGE_WRITE
+    or  eax, FIRST_PD_BASE + 0x1000
+    mov edi, FIRST_PDPT_BASE + 0x8
+    mov dword[edi], eax
+
+
+    ; Initialize PDPT entry for third entry
+    xor eax, eax
+    or  eax, PAGE_PRESENT | PAGE_WRITE
+    or  eax, FIRST_PD_BASE + 0x2000
+    mov edi, FIRST_PDPT_BASE + 0x10
+    mov dword[edi], eax
+
+
+    ; Initialize PDPT entry for forth entry
+    xor eax, eax
+    or  eax, PAGE_PRESENT | PAGE_WRITE
+    or  eax, FIRST_PD_BASE + 0x3000
+    mov edi, FIRST_PDPT_BASE + 0x18
+    mov dword[edi], eax
+
     ; Fill Page Directory
     xor ebx, ebx
-    mov ecx, 512
+    mov ecx, 2048
     mov edi, FIRST_PD_BASE
     call fill_pd
     ret
 
+counter:
+    dw 0
 
 align 4
 idt:
@@ -184,7 +233,6 @@ gdt_desc:
         dd gdt_base
 
 ; 64-bit long mode GDT
-
 align 8
 lmgdt_base:
     dq 0x0000000000000000 ; Null descriptor
@@ -196,13 +244,42 @@ lmgdt:
     dd lmgdt_base
     dd 0
 
-[bits 64]
-enter_long:
-    mov rsp, 0x50000
-    jmp entry_p
-
 times 510 - ($-$$) db 0
 dw 0xaa55
+stack_wait: db 1
+
+[bits 64]
+enter_long:
+
+    ;mov byte [stack_wait], 1
+    
+    mov esp, 0x40000
+    cmp bp, 0x1
+    jge .ap_entry
+    mov cx, 0x0
+    jmp entry_p
+    hlt
+.ap_entry:
+    mov edx, 0x4000
+    mov eax, ebp
+    mul edx
+    add esp, eax
+    mov cx, bp
+    jmp entry_p
+    hlt
+
+times (0x8000 - 0x7c00) - ($-$$) db 0
+[bits 16]
+ap_entry:
+    mov ax, WORD [counter]
+    .try:
+        mov bx, ax
+        inc bx
+        lock cmpxchg WORD [counter], bx
+    jnz .try
+    jmp 0x0000:_start
+
+times (0x8100 - 0x7c00) - ($-$$) db 0
 
 entry_p:
     incbin "../../elf_parse/flat.bin"

@@ -12,3 +12,4 @@ extern "C"
     }
 }
 
+extern "C" void start_kernel () __attribute__ ((section ("entry")));

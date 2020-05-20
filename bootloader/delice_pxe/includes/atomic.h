@@ -22,6 +22,8 @@ struct Guard {
     T* operator->(){
         return &(cell->val);
     }
+    Guard(Guard &other) = delete;
+    Guard(Guard &&other) = default;
     ~Guard();
 };
 
@@ -32,6 +34,8 @@ Guard<T>::~Guard(){
 
 template <class T>
 Guard<T> Lock<T>::lock(){
+    // It does "lock inc" instr to atomically increment 
+    // counter that variable by 1.
     auto ticket = acquire.fetch_add(1, std::memory_order_seq_cst);
     while(release.load(std::memory_order_seq_cst) != ticket){
         __builtin_ia32_pause();

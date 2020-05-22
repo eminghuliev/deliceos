@@ -99,6 +99,21 @@ static inline __attribute__((always_inline)) void disable_interrupt(){
 static inline __attribute__((always_inline)) void enable_interrupt(){
 	__asm__ __volatile__ ("sti":::"memory", "cc");	
 }
-void recursion();
+
+static inline __attribute__((always_inline)) void lfence(){
+    asm volatile("lfence\n\t"
+                 :
+                 :
+                 : "memory");
+}
+
+static inline __attribute__((always_inline)) void mfence(){
+    asm volatile("mfence\n\t"
+                 :
+                 :
+                 : "memory");
+}
+
+void recursion(size_t incr);
 }
 #endif

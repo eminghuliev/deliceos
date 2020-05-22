@@ -1,7 +1,8 @@
-#include "misc/cpu.h"
+#include <misc/cpu.h>
+#include <printf.h>
 
 namespace cpu {
-void recursion(){
-    recursion();
+void recursion(size_t incr){
+    recursion(0);
 }
 }

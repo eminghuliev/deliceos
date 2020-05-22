@@ -7,14 +7,11 @@
 #include <atomic>
 #include <paging.h>
 #include <interrupt.h>
+#include <perfctr.h>
 extern "C" void start_kernel(){
     // Initialize all entries in init_array section
     static_init();
     cpu::disable_interrupt();
-    
-    //uint32_t *addr = (uint32_t*)((uint8_t*)0xb8000 + (cx * 2));
-    //*addr = 0x0f41;
-
     static std::atomic_uint CORE_ID {0};
     // Set-up serial interface
     serial::Serial serial;
@@ -44,16 +41,16 @@ extern "C" void start_kernel(){
 
         apic.init();
         apic.enable_lapic();
-        //apic.lapic_init();
-	//cpu::recursion();
-        //printf("Hi guyz bross\n");
+        apic.lapic_init();
+        while(1){
+            printf("Loop %lx\n", PerfCounter::read(0));
+            size_t ii = 0;
+            do {
+                ii+=1;
+            }while(ii < 1000000000000000);
+        }
         //apic.launch_ap(core_id + 1);
-        //__asm__("int $250");
-        uint64_t *addrsix = (uint64_t*)0x1337debeef;
-        *addrsix = 0xbeef;
-    	printf("After interrupt bro\n");
     }
-
     if(cpu::get_apic_id() == 1){
         printf("Hello from core 1 core_id %d\n", core_id);
     }

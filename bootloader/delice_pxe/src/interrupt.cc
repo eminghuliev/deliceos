@@ -2,9 +2,11 @@
 #include <cstddef>
 #include <printf.h>
 #include <misc/cpu.h>
-#define INTERRUPT_GATE              0xe
-#define TRAP_GATE                   0xf
-
+#define INTERRUPT_GATE  0xe
+#define TRAP_GATE       0xf
+#define PAGE_FAULT      0xe
+#define GP_FAULT        0xd
+#define PMI_VEC         0x2
 extern "C" uint64_t interrupt_handler(size_t vector, 
 		struct cpu::interrupt_frame *frame, 
 		size_t error_code, 
@@ -52,15 +54,33 @@ void set_interrupt_gate(uint8_t vector, uint8_t type, uint64_t handler){
     idesc->type = type;
     idesc->dpl = 0x0;
     idesc->present = 1;
-    idesc->offset_1 = handler; // Interrupt handler
+    idesc->offset_1 = handler;
     idesc->offset_2 = handler >> 16;
     idesc->offset_3 = handler >> 32;
 }
 
-uint64_t interrupt_handler(size_t vector, struct cpu::interrupt_frame *frame, size_t error_code, struct cpu::registers *state){
-    printf("Hallo from interrupt! vector %lx %d\n", (uint64_t)state, vector);
+uint64_t interrupt_handler(size_t vector, 
+        struct cpu::interrupt_frame *frame, 
+        size_t error_code, 
+        struct cpu::registers *state){
+    printf("Hallo from interrupt! vector %lx %d\n", frame->rip, vector);
+    switch(vector){
+        case(PAGE_FAULT):
+            printf("Page fault occurred!\n");
+            while(1){}
+            break;
+        case(GP_FAULT):
+            printf("General Protection fault occurred\n");
+            while(1){};
+            break;
+        case(PMI_VEC):
+            printf("PMI Interrupt occurred\n");
+            cpu::eoi();
+            return reinterpret_cast<uint64_t>(state);
+            break;
+
+    }
     cpu::eoi();
-    
     return reinterpret_cast<uint64_t>(state);
 }
 

@@ -5,7 +5,10 @@
 #define INTERRUPT_GATE              0xe
 #define TRAP_GATE                   0xf
 
-extern "C" void interrupt_handler(struct cpu::state *state);
+extern "C" uint64_t interrupt_handler(size_t vector, 
+		struct cpu::interrupt_frame *frame, 
+		size_t error_code, 
+		struct cpu::registers *state);
 
 extern uint64_t (*ex_handlers[32])();
 extern "C" void default_trap_handler();
@@ -40,7 +43,7 @@ static struct IDT_Desc interrupt_desc_table[255];
 __attribute__((aligned(64)))
 static struct idt_reg idt;
 
-void set_interrupt_gate(uint8_t vector, uint8_t type, uint64_t callback){
+void set_interrupt_gate(uint8_t vector, uint8_t type, uint64_t handler){
     struct IDT_Desc * idesc =
         (struct IDT_Desc *)&interrupt_desc_table[vector];
     memset(idesc, 0x0, sizeof(struct IDT_Desc));
@@ -49,15 +52,16 @@ void set_interrupt_gate(uint8_t vector, uint8_t type, uint64_t callback){
     idesc->type = type;
     idesc->dpl = 0x0;
     idesc->present = 1;
-    idesc->offset_1 = callback;
-    idesc->offset_2 = callback >> 16;
-    idesc->offset_3 = callback >> 32;
+    idesc->offset_1 = handler; // Interrupt handler
+    idesc->offset_2 = handler >> 16;
+    idesc->offset_3 = handler >> 32;
 }
 
-void interrupt_handler(struct cpu::state *state){
-    printf("Hallo from interrupt! vector %lx %d\n",state->rip, state->vector);
+uint64_t interrupt_handler(size_t vector, struct cpu::interrupt_frame *frame, size_t error_code, struct cpu::registers *state){
+    printf("Hallo from interrupt! vector %lx %d\n", (uint64_t)state, vector);
     cpu::eoi();
-    cpu::halt();
+    
+    return reinterpret_cast<uint64_t>(state);
 }
 
 void load_idt(void)

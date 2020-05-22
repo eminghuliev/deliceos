@@ -154,8 +154,8 @@ void Apic::enable_lapic(){
 }
 
 void Apic::lapic_init(){
-    cpu::apic_write(0x340, 0x400);
-    //mask_lvt(0x340);
+    // Configure APIC to deliver NMIs
+    cpu::apic_write(0x340, 0b100 << 8);
     __asm__("wrmsr" : : "c"(0x38f), "a"(0x1), "d"(0x1));
     //uint64_t curr_msr = cpu::rdmsr(0x38f);
     //cpu::wrmsr(0x38f, curr_msr | (1ull<<32));

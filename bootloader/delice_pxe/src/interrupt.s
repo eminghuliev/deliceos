@@ -13,6 +13,7 @@ entry_vector:
     push rcx
     push rdx
     push rsi
+    push rdi
     push rbp
     push r15
     push r14
@@ -22,11 +23,32 @@ entry_vector:
     push r10
     push r9
     push r8
-    mov rdi, rsp
+    mov edi, dword[rsp + 120] ; vector code
+    mov edx, dword[rsp + 128] ; error code
+    mov rcx, rsp ; stack register
+    lea rsi, [rsp + 136] ; interrupt frame
     call interrupt_handler
-
+    mov rsp, rax
+    pop r8
+    pop r9
+    pop r10
+    pop r11
+    pop r12
+    pop r13
+    pop r14
+    pop r15
+    pop rbp
+    pop rsi
+    pop rdi
+    pop rdx
+    pop rcx
+    pop rbx
+    pop rax
+    add rsp, 16
+    cli
+    hlt
     ; It will be changed with iretq
-    jmp $
+    iret
 
 %macro EXCEPTION_ENTRY_ERROR_CODE 1
 align 8

@@ -5,7 +5,7 @@
 #define e20_addr 0x14000
 namespace cpu {
 
-struct state {
+struct registers {
     uint64_t r8;
     uint64_t r9;
     uint64_t r10;
@@ -16,13 +16,19 @@ struct state {
     uint64_t r15;
     uint64_t rbp;
     uint64_t rsi;
+    uint64_t rdi;
     uint64_t rdx;
     uint64_t rcx;
     uint64_t rbx;
     uint64_t rax;
-    uint64_t vector;
-    uint64_t err_code;
+};
+
+struct interrupt_frame {
     uint64_t rip;
+    uint64_t cs;
+    uint64_t rflags;
+    uint64_t rsp;
+    uint64_t ss;
 };
 
 struct e20_entry {

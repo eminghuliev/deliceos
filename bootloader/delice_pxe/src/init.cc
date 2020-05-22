@@ -44,14 +44,14 @@ extern "C" void start_kernel(){
 
         apic.init();
         apic.enable_lapic();
-        apic.lapic_init();
-	cpu::recursion();
+        //apic.lapic_init();
+	//cpu::recursion();
         //printf("Hi guyz bross\n");
         //apic.launch_ap(core_id + 1);
         //__asm__("int $250");
-        //uint64_t *addrsix = (uint64_t*)0x1337debeef;
-        //*addrsix = 0xbeef;    
-    
+        uint64_t *addrsix = (uint64_t*)0x1337debeef;
+        *addrsix = 0xbeef;
+    	printf("After interrupt bro\n");
     }
 
     if(cpu::get_apic_id() == 1){

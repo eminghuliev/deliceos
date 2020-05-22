@@ -34,7 +34,6 @@ extern "C" void start_kernel(){
                                         entry_addr->len, entry_addr->type);
         }
         //map_addr(0xfee00020, 0xfee00020);
-
         printf("It's BSP processor\n");
         Apic apic;
         if(apic.check_apic()){
@@ -46,8 +45,7 @@ extern "C" void start_kernel(){
         apic.init();
         apic.enable_lapic();
         apic.lapic_init();
-
-        cpu::recursion();
+	cpu::recursion();
         //printf("Hi guyz bross\n");
         //apic.launch_ap(core_id + 1);
         //__asm__("int $250");

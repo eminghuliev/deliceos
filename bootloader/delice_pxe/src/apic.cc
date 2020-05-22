@@ -156,10 +156,16 @@ void Apic::enable_lapic(){
 void Apic::lapic_init(){
     cpu::apic_write(0x340, 0x400);
     //mask_lvt(0x340);
-    __asm__("wrmsr" : : "c"(0x38f), "a"(0x00000001), "d"(0x00000000));
-   
-    __asm__("wrmsr" : : "c"(0x186), "a"(0x005100C0), "d"(0x0));
-    __asm__("wrmsr" : : "c"(0xc1),  "a"(0xFFFFD8F0), "d"(0x0));
+    __asm__("wrmsr" : : "c"(0x38f), "a"(0x1), "d"(0x1));
+    //uint64_t curr_msr = cpu::rdmsr(0x38f);
+    //cpu::wrmsr(0x38f, curr_msr | (1ull<<32));
+    cpu::wrmsr(0x390, cpu::rdmsr(0x390) & ~(1UL<<32));
+    cpu::wrmsr(0x309, 0xffffffff0000);
+    cpu::wrmsr(0x38d, 0xb);
+    
+
+    //__asm__("wrmsr" : : "c"(0x186), "a"(0x005100C0), "d"(0x0));
+    //__asm__("wrmsr" : : "c"(0xc1),  "a"(0xFFFFD8F0), "d"(0x0));
     //__asm__("wrmsr" : : "c"(0x309), "a"(0x80000000), "d"(0xffff));
     //__asm__("xor %edx, %edx");
     //__asm__("wrmsr" : : "c"(0x309), "a"(0x80000000), "d"(0xffff));

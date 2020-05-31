@@ -3,7 +3,7 @@ project('deliceos first stage kernel', 'cpp')
 compiler_args = ['-m64',
   '-fno-stack-protector',
   '-ffreestanding',
-  '-Os',
+  '-O1',
   '-s',
   '-fno-exceptions',
   '-fno-builtin-printf',
@@ -22,7 +22,9 @@ source_files = ['src/init.cc',
                 'src/interrupt.cc',
                 'src/cpuid.cc',
                 'src/paging.cc',
-                'src/cpu.cc'
+                'src/cpu.cc',
+                'src/perfctr.cc',
+                'src/screen.cc'
                 ]
 
 # Generate assembly

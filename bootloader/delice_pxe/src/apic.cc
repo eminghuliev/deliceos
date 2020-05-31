@@ -1,9 +1,8 @@
-#include <misc/cpuid.h>
-#include "apic.h"
-#include "misc/cpu.h"
-#include <tuple>
+#include <cstddef>
+#include <misc/cpu.h>
 #include <optional>
-#include "printf.h"
+#include <printf.h>
+#include <apic.h>
 #define MADT_LAPIC 0x00
 #define MADT_IOAPIC 0x01
 #define MAX_CPUS 18
@@ -15,7 +14,7 @@ struct rsdp
 {
     char              signature[8];
     uint8_t           checksum;
-    uint8_t           OEMID[6];
+    uint8_t           oem_id[6];
     uint8_t           revision;
     uint32_t          rsdt_addr;
     uint32_t          length;
@@ -59,7 +58,7 @@ int memcmp(char *src, char *dest, size_t size){
 }
 
 bool Apic::check_apic(){
-    [[maybe_unused]] auto [eax, ebx, edx, ecx] = cpuid(1, 0);
+    [[maybe_unused]] auto [eax, ebx, edx, ecx] = cpu::cpuid(1, 0);
     return edx & ( 1 << 9);
 }
 std::optional<char*> check_rsdt(uint32_t low, uint32_t high){
@@ -155,14 +154,15 @@ void Apic::enable_lapic(){
 
 void Apic::lapic_init(){
     // Configure APIC to deliver NMIs
-    cpu::apic_write(0x340, 0b100 << 8);
-    __asm__("wrmsr" : : "c"(0x38f), "a"(0x1), "d"(0x1));
-    //uint64_t curr_msr = cpu::rdmsr(0x38f);
-    //cpu::wrmsr(0x38f, curr_msr | (1ull<<32));
-    cpu::wrmsr(0x390, cpu::rdmsr(0x390) & ~(1UL<<32));
-    cpu::wrmsr(0x309, 0xffffffff0000);
-    cpu::wrmsr(0x38d, 0xb);
-    
+    // Primary configuration
+
+    // New configuration
+    //__asm__("wrmsr" : : "c"(0xc1),  "a"(0x0), "d"(0x0));
+    //__asm__("wrmsr" : : "c"(0x4c1), "a"((1 << 48) - 10000), "d"(0x0));
+    //cpu::wrmsr(0x4c1, (1ULL << 48));
+    //__asm__("wrmsr" : : "c"(0x186), "a"(0x5301c2), "d"(0x0));
+    //__asm__("wrmsr" : : "c"(0x38F), "a"(0x00000001), "d"(0x00000000));
+
 
     //__asm__("wrmsr" : : "c"(0x186), "a"(0x005100C0), "d"(0x0));
     //__asm__("wrmsr" : : "c"(0xc1),  "a"(0xFFFFD8F0), "d"(0x0));

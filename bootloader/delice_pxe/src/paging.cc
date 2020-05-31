@@ -1,37 +1,29 @@
 // Paging
 #include <cstdint>
-#include <printf.h>
+#include <stdlib.h>
 #include <paging.h>
-// Map 2MB
+#include <misc/cpu.h>
+#include <printf.h>
+#define APIC_PDPTE 0x22000
+#define APIC_PDE 0x23000
 
-#define PAGE_SHIFT_2M 21
-
-void map_addr(uint64_t vaddr, uint64_t phys){
-     uint64_t indicies[] = {
+void map_addr(uint64_t vaddr, uint64_t phys, uint64_t flags){
+    uint64_t indicies[] = {
         (vaddr >> 39) & 0x1ff,
         (vaddr >> 30) & 0x1ff,
         (vaddr >> 21) & 0x1ff,
         (vaddr >> 12) & 0x1ff,
-     };
-   
-   struct pml4_entry *pml4e_addr = 
-         (struct pml4_entry*)(FIRST_PML4_BASE + (uint8_t*)(indicies[0]));
+    };
+    uint64_t *pml4_addr = ((uint64_t*)FIRST_PML4_BASE) + indicies[0];
+    memset(pml4_addr, 0x0, sizeof(uint64_t));
+    *pml4_addr = PAGE_PRESENT | PAGE_WRITE | APIC_PDPTE;
 
-    pml4e_addr->present = 1;
-    pml4e_addr->writable = 1;
-    pml4e_addr->pdpt_base = FIRST_PDPT_BASE + 0x1000;
-    
-    struct pdpt_entry *pdpte_addr =
-        (struct pdpt_entry*) (pml4e_addr->pdpt_base + (uint8_t*)(indicies[1]));
-    pdpte_addr->present = 1;
-    pdpte_addr->writable = 1;
-    pdpte_addr->pd_base = FIRST_PD_BASE + 0x1000; 
+    uint64_t *pdpte_addr = ((uint64_t*)APIC_PDPTE) + indicies[1]; 
+    memset(pdpte_addr, 0x0, sizeof(uint64_t));
+    *pdpte_addr = PAGE_PRESENT | PAGE_WRITE | APIC_PDE;
 
 
-    struct pd2mb_entry *pd2mb_addr = 
-        (struct pd2mb_entry*)(pdpte_addr->pd_base + (uint8_t*)(indicies[2]));
-    pd2mb_addr->present = 1;
-    pd2mb_addr->writable = 1;
-    pd2mb_addr->page2m = phys >> PAGE_SHIFT_2M;
-
+    uint64_t *pd_entry = ((uint64_t*)APIC_PDE) + indicies[2];
+    memset(pd_entry, 0x0, sizeof(uint64_t));
+    *pd_entry = flags | PAGE_SIZE_2MB | phys;
 }

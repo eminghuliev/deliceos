@@ -1,3 +1,5 @@
+#ifndef _APIC_H
+#define _APIC_H
 #include <cstdint>
 struct Apic {
     bool check_apic();
@@ -8,3 +10,4 @@ struct Apic {
     void lapic_init();
     void eoi();
 };
+#endif

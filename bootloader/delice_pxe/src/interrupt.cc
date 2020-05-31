@@ -1,7 +1,7 @@
 #include <cstdint>
 #include <cstddef>
-#include <printf.h>
 #include <misc/cpu.h>
+#include <printf.h>
 #define INTERRUPT_GATE  0xe
 #define TRAP_GATE       0xf
 #define PAGE_FAULT      0xe
@@ -66,7 +66,7 @@ uint64_t interrupt_handler(size_t vector,
     printf("Hallo from interrupt! vector %lx %d\n", frame->rip, vector);
     switch(vector){
         case(PAGE_FAULT):
-            printf("Page fault occurred!\n");
+            printf("Page fault occurred! error_code %d\n", error_code);
             while(1){}
             break;
         case(GP_FAULT):

@@ -40,7 +40,7 @@ static Lock<serial::ComDevices>
 
 //_putchar function is used within printf function to write bytes
 //to serial interface. We can also change it to VGA interface.
-extern "C" void _putchar(char byte){
+extern "C" void _putchar_serial(char byte){
     spin.lock()->write(byte);
 }
 

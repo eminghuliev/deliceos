@@ -1,7 +1,7 @@
 %define E820_ADDR        0x4000
 %define FIRST_PML4_BASE 0x32000
-%define FIRST_PDPT_BASE 0x36000
-%define FIRST_PD_BASE   0x37000
+%define FIRST_PDPT_BASE 0x33000
+%define FIRST_PD_BASE   0x34000
 %define PAGE_PRESENT    (1 << 0)
 %define PAGE_WRITE      (1 << 1)
 %define PAGE_SIZE       (1 << 7)
@@ -91,6 +91,7 @@ entry:
     ; Initialize Page Table
     call early_page
 
+    ; Get core's APIC ID
     mov edi, 0xfee00020
     mov eax, dword[edi]
     shr eax, 24
@@ -138,7 +139,7 @@ fill_pd:
     or  eax, ebx
     mov dword[edi], eax
     add edi, 8
-    add ebx, 0x200000 ; 2 MiB
+    add ebx, 0x200000 ; 2 MiB=
     loop fill_pd
     ret
 
@@ -147,8 +148,7 @@ early_page:
     ; Clear 1024 * 4 bytes in PML4
     mov edi, FIRST_PML4_BASE
     mov ecx, 4096 ; zeroing PML4, PDP, PD
-    call do_memset_zero
-    
+    call do_memset_zero 
     ; Initialize PML4 entry with present, write flags and PDPT base address
     xor eax, eax
     or  eax, PAGE_PRESENT | PAGE_WRITE
@@ -156,27 +156,6 @@ early_page:
     mov edi, FIRST_PML4_BASE
     mov dword[edi], eax
     
-    ; Initialize PML4 - second entry with present write flags and PDPT base addr
-    xor eax, eax
-    or  eax, PAGE_PRESENT | PAGE_WRITE
-    or  eax, FIRST_PDPT_BASE + 0x8
-    mov edi, FIRST_PML4_BASE + 0x8
-    mov dword[edi], eax
-
-    ; Initialize PML4 - third entry with present write flags and PDPT base addr
-    xor eax, eax
-    or  eax, PAGE_PRESENT | PAGE_WRITE
-    or  eax, FIRST_PDPT_BASE + 0x10
-    mov edi, FIRST_PML4_BASE + 0x10
-    mov dword[edi], eax
-
-    ; Initialize PML4 - forth entry with present write flags and PDPT base addr
-    xor eax, eax
-    or  eax, PAGE_PRESENT | PAGE_WRITE
-    or  eax, FIRST_PDPT_BASE + 0x18
-    mov edi, FIRST_PML4_BASE + 0x18
-    mov dword[edi], eax
-
     ; Initialize PDPT entry with present, write flags and PD base address
     xor eax, eax
     or  eax, PAGE_PRESENT | PAGE_WRITE
@@ -184,38 +163,36 @@ early_page:
     mov edi, FIRST_PDPT_BASE
     mov dword[edi], eax
 
-    ; Initialize PDPT entry for second entry
-    xor eax, eax
-    or  eax, PAGE_PRESENT | PAGE_WRITE
-    or  eax, FIRST_PD_BASE + 0x1000
-    mov edi, FIRST_PDPT_BASE + 0x8
-    mov dword[edi], eax
-
-
-    ; Initialize PDPT entry for third entry
-    xor eax, eax
-    or  eax, PAGE_PRESENT | PAGE_WRITE
-    or  eax, FIRST_PD_BASE + 0x2000
-    mov edi, FIRST_PDPT_BASE + 0x10
-    mov dword[edi], eax
-
-
-    ; Initialize PDPT entry for forth entry
-    xor eax, eax
-    or  eax, PAGE_PRESENT | PAGE_WRITE
-    or  eax, FIRST_PD_BASE + 0x3000
-    mov edi, FIRST_PDPT_BASE + 0x18
-    mov dword[edi], eax
-
     ; Fill Page Directory
     xor ebx, ebx
-    mov ecx, 2048
+    mov ecx, 512
     mov edi, FIRST_PD_BASE
     call fill_pd
-    ret
 
-counter:
-    dw 0
+    ; Initialize for 0x1337deadbeef
+    ;mov eax, 0x200000 + 0xadbef
+    ;mov dword[eax], 0xdeadbeaf
+    
+    ;xor eax, eax
+    ;or  eax, PAGE_PRESENT | PAGE_WRITE
+    ;or  eax, 0x22000 ; FIRST_PDPT_BASE
+    ;mov edi, FIRST_PML4_BASE + (2 * 8)
+    ;mov dword[edi], eax
+    
+    ;xor eax, eax
+    ;or  eax, PAGE_PRESENT | PAGE_WRITE
+    ;or  eax, 0x23000 ; FIRST_PD_BASE
+    ;mov edi, 0x22000 + (0xcd * 8)
+    ;mov dword[edi], eax
+    
+    ;xor eax, eax
+    ;mov ebx, 0x200000
+    ;mov edi, 0x23000 + (0x1ef * 8)
+    ;or  eax, PAGE_PRESENT | PAGE_WRITE | PAGE_SIZE
+    ;or  eax, ebx
+    ;mov dword[edi], eax
+
+    ret
 
 align 4
 idt:
@@ -250,9 +227,7 @@ stack_wait: db 1
 
 [bits 64]
 enter_long:
-
-    ;mov byte [stack_wait], 1
-    
+    mov byte [stack_wait], 1
     mov esp, 0x40000
     cmp bp, 0x1
     jge .ap_entry
@@ -271,12 +246,6 @@ enter_long:
 times (0x8000 - 0x7c00) - ($-$$) db 0
 [bits 16]
 ap_entry:
-    mov ax, WORD [counter]
-    .try:
-        mov bx, ax
-        inc bx
-        lock cmpxchg WORD [counter], bx
-    jnz .try
     jmp 0x0000:_start
 
 times (0x8100 - 0x7c00) - ($-$$) db 0

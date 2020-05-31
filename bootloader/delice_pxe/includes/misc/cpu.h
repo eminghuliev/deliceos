@@ -2,9 +2,11 @@
 #define _CPU_H
 #include <cstddef>
 #include <cstdint>
+#include <tuple>
 #define e20_addr 0x14000
+#define intel() __asm__(".intel_syntax noprefix");
+#define att() __asm__(".att_syntax");
 namespace cpu {
-
 struct registers {
     uint64_t r8;
     uint64_t r9;
@@ -39,13 +41,13 @@ struct e20_entry {
 }__attribute__((packed));
 static inline __attribute__((always_inline)) uint32_t apic_read(uint32_t reg)
 {
-    uint32_t *apic_base = (uint32_t*) 0xfee00000; // APIC base address
+    uint32_t *apic_base = (uint32_t*) 0x13370000000; // APIC base address
     return *((volatile uint32_t *)(apic_base + (reg / 4)));
 }
 static inline __attribute__((always_inline)) int apic_write(uint32_t reg, uint32_t v)
 {
     volatile uint32_t *addr;
-    uint32_t *apic_base = (uint32_t*) 0xfee00000; // APIC base address
+    uint32_t *apic_base = (uint32_t*) 0x13370000000; // APIC base address
     addr = (volatile uint32_t *)(apic_base + (reg / 4));
     asm volatile ("movl %1, %0"
         :"=m"(*addr):"r"(v):);
@@ -64,6 +66,14 @@ static inline __attribute__((always_inline)) void eoi(){
 static inline __attribute__((always_inline)) void invlpg(void* m)
 {
     asm volatile ( "invlpg (%0)" : : "b"(m) : "memory" );
+}
+
+static inline __attribute__((always_inline)) std::tuple<uint32_t, uint32_t, uint32_t, uint32_t> cpuid(uint32_t eax_ , uint32_t ecx_){
+    uint32_t eax, ebx, ecx, edx;
+    __asm__ volatile("cpuid"
+    : "=a" (eax), "=b" (ebx), "=c" (ecx), "=d" (edx)
+    : "a" (eax_), "c" (ecx_));
+    return {eax, ebx, edx, ecx};
 }
 
 static inline __attribute__((always_inline)) uint64_t rdmsr(uint32_t msr){
@@ -112,6 +122,13 @@ static inline __attribute__((always_inline)) void mfence(){
                  :
                  :
                  : "memory");
+}
+
+static inline __attribute__((always_inline)) uint64_t rdtsc(void)
+{
+    uint32_t high, low;
+    __asm__ __volatile__ ("rdtsc" : "=a"(low), "=d"(high));
+    return ((uint64_t)high << 32) | low;
 }
 
 void recursion(size_t incr);

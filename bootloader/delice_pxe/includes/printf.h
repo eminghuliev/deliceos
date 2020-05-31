@@ -46,8 +46,8 @@ extern "C" {
  * This function is declared here only. You have to write your custom implementation somewhere
  * \param character Character to output
  */
-void _putchar(char character);
-
+void _putchar_serial(char character);
+void _putchar_screen(char character);
 
 /**
  * Tiny printf implementation

@@ -33,7 +33,11 @@ void serial::ComDevices::write(const char byte){
         io::outb(dev, byte);
     }
 }
-
+serial::ComDevices comdevices{};
+extern "C" void _putchar_serial(char byte) {
+    comdevices.write(byte);
+}
+/*
 //Create shared device list that is shared among other threads
 static Lock<serial::ComDevices> 
                 spin(serial::ComDevices{});
@@ -43,8 +47,8 @@ static Lock<serial::ComDevices>
 extern "C" void _putchar_serial(char byte){
     spin.lock()->write(byte);
 }
-
+*/
 void serial::Serial::init(){
     //initialize ports
-    spin.lock()->init();
+    comdevices.init();
 }

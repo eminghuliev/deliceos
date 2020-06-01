@@ -4,12 +4,13 @@
 #include <apic.h>
 #include <printf.h>
 #include <misc/init.h>
-#include <atomic>
+#include <atomic.h>
 #include <paging.h>
 #include <interrupt.h>
 #include <perfctr.h>
 #include <screen.h>
-extern "C" void start_kernel(){
+
+extern "C" void __attribute__((optimize("O0"))) start_kernel(){
     // Initialize all entries in init_array section
     static_init();
     cpu::disable_interrupt();
@@ -27,8 +28,7 @@ extern "C" void start_kernel(){
             PAGE_PRESENT | PAGE_WRITE | PAGE_UC);
 
     if(cpu::is_bsp()){
-        printf("Delice OS Bootloader\n");
-        /*
+        //printf("Delice OS Bootloader\n");
         // Get count of e20 entries
         uint8_t entry_count = 
                 (*(reinterpret_cast<uint8_t*>(e20_addr + 0x200))) - 1;
@@ -38,81 +38,26 @@ extern "C" void start_kernel(){
                 reinterpret_cast<cpu::e20_entry*>(e20_addr) + ii;
             printf("e820 entry addr entry %lx %x %d\n", entry_addr->addr, 
                                         entry_addr->len, entry_addr->type);
-        }*/
+        }
         printf("BSP processor ready\n"); 
         Apic apic;
         if(apic.check_apic()){
-            //printf("APIC is supported");
+            printf("APIC is supported\n");
         }
         load_idt();
         cpu::enable_interrupt();
         apic.init();
         apic.enable_lapic();
-        ::PerfCounter::get_perf();
-        ::PerfCounter::enable_pmi_nmi();
-        /*[[maybe_unused]] void (*junk_ptr[2])() = {&PerfCounter::unoptimized_function, 
-                                &PerfCounter::unoptimized_function2};
-        */
-        //int arr[] = {2, 160, 110, 180, 81, 170, 105, 89, 130, 120, 105, 300, 480, 490, 420};
-        for(int ii = 0; ii < 30; ii++){
-            ::PerfCounter::disable_perf_globalctrl();
-            ::PerfCounter::reset();
-            ::PerfCounter::clear();
-            __asm__ volatile ("WBINVD");
-            ::PerfCounter::set_perfselect(::PerfCounter::generate_perf());
-            //::PerfCounter::set_event_counts((1ULL << 48) - 2);
-            //::PerfCounter::set_fixed_ctrl();
-            ::PerfCounter::set_perf_globalctrl();
-            //junk_ptr[ii]();
-            uint64_t start = cpu::rdtsc();
-            intel();
-            __asm__ volatile("lfence;"
-                            "mov edx, 0x5;"
-                            "mov eax, 0x400;"
-                            "xor ecx, ecx;"
-                            );
-            att();
-            //::PerfCounter::unoptimized_function(arr[ii]);
-            uint64_t stop = cpu::rdtsc();
-            //printf("PMC counter val %d\n", PerfCounter::read(0));
-            printf("Cycles %d, %d\n",ii, stop - start);
-        }
-        /*::PerfCounter::enable_pmi_nmi();
-        void (*junk_ptr[2])() = {&PerfCounter::unoptimized_function, 
-                                &PerfCounter::unoptimized_function2};
-        for(int ii = 0; ii < 2; ii++){
-            ::PerfCounter::reset();
-            ::PerfCounter::clear();
-            ::PerfCounter::set_event_counts((1ULL << 48) - 2);
-            ::PerfCounter::set_fixed_ctrl();
-            ::PerfCounter::set_perfselect(::PerfCounter::generate_perf());
-            ::PerfCounter::set_perf_globalctrl();
-            //junk_ptr[ii]();
-            __asm__ volatile("cmp %eax, %eax;"
-                    "jnz 1f;"
-                    "1: mov $0, %eax");
-            ::PerfCounter::disable_perf_globalctrl();
-            while(cpu::rdmsr(0x38e) == 0){}
-            printf("What di fak? ass %x\n", cpu::rdmsr(0x30a));
-            printf("PMC counter val %d\n", PerfCounter::read(0));
-        } */
         // Send IPI to All cores
-        //apic.launch_ap(core_id + 1);
+        apic.launch_ap(core_id + 1);
+        //printf("CPU %d\n", cpu::get_apic_id());
     }
-
-    if(cpu::get_apic_id() == 3){
-        printf("Hello from core 3 core_id %d\n", core_id);
+    else {
+        printf("CPU %d\n", cpu::get_apic_id());
     }
-
-    /*if(cpu::get_apic_id() == 2){
-        printf("Hello from core 2 core_id %d\n", core_id);
-    }
-    if(cpu::get_apic_id() == 3){
-        printf("Hello from core 3 core_id %d\n", core_id);
-    }*/
     // We will release stack in the end of each core procedure
-    //uint8_t *stack_wait = (uint8_t*)0x7e00;
-    //*stack_wait = 0x1;
+    uint8_t *stack_wait = (uint8_t*)0x7e00;
+    *stack_wait = 0x1;
     // CPU core enters into hlt
     __asm__("cli; hlt");
 }

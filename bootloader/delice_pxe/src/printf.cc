@@ -35,7 +35,7 @@
 #include <stdint.h>
 
 #include <printf.h>
-
+#include <atomic.h>
 
 // define this globally (e.g. gcc -DPRINTF_INCLUDE_CONFIG_H ...) to include the
 // printf_config.h header file
@@ -580,7 +580,6 @@ static int _vsnprintf(out_fct_type out, char* buffer, const size_t maxlen, const
 {
   unsigned int flags, width, precision, n;
   size_t idx = 0U;
-
   if (!buffer) {
     // use null output function
     out = _out_null;
@@ -860,13 +859,18 @@ static int _vsnprintf(out_fct_type out, char* buffer, const size_t maxlen, const
 
 
 ///////////////////////////////////////////////////////////////////////////////
+typedef struct {
+    int (*vsnptr)(out_fct_type out, char* buffer, const size_t maxlen, const char* form, va_list va);
+} fnptr;
+
+static Lock <fnptr> spin(fnptr {vsnptr: &_vsnprintf});
 
 int printf_(const char* format, ...)
 {
   va_list va;
   va_start(va, format);
   char buffer[1];
-  const int ret = _vsnprintf(_out_char, buffer, (size_t)-1, format, va);
+  const int ret = spin.lock()->vsnptr(_out_char, buffer, (size_t)-1, format, va);
   va_end(va);
   return ret;
 }

@@ -227,7 +227,7 @@ stack_wait: db 1
 
 [bits 64]
 enter_long:
-    mov byte [stack_wait], 1
+    ;mov byte [stack_wait], 1
     mov esp, 0x40000
     cmp bp, 0x1
     jge .ap_entry

@@ -10,14 +10,15 @@ void get_perf(){
 
 uint64_t generate_perf(){
     perf_select val = {};
-    val.fields.event = 0xc4;
-    val.fields.umask = 0x0;
+    val.fields.event = 0x08;
+    val.fields.umask = 0xe;
     val.fields.usr   = 1;
     val.fields.os    = 1;
     val.fields.edge  = 0;
     val.fields.pinctrl = 0;
     val.fields.interrupt = 1;
     val.fields.enable = 1;
+    val.fields.counter_mask = 1;
     return val.bits;
 }
 
@@ -68,7 +69,7 @@ void __attribute__((optimize("O0"))) unoptimized_function(int x){
 
 void __attribute__((optimize("O0"))) unoptimized_function2(){
     uint32_t *addr = (uint32_t*)0xb8000;
-    for(int ii = 0; ii < 10; ii++){
+    for(int ii = 0; ii < 255; ii++){
         if(*(addr + ii)){
             __asm__ volatile("nop");
         }

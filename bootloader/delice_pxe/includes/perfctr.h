@@ -6,16 +6,17 @@ namespace PerfCounter {
 
 typedef union {
     struct {
-        uint8_t event      :8;
-        uint8_t umask      :8;
-        uint8_t usr        :1;
-        uint8_t os         :1;
-        uint8_t edge       :1;
-        uint8_t pinctrl    :1;
-        uint8_t interrupt  :1;
-        uint8_t _          :1;
-        uint8_t enable     :1;
-        uint8_t inverter   :1;
+        uint8_t event           :8;
+        uint8_t umask           :8;
+        uint8_t usr             :1;
+        uint8_t os              :1;
+        uint8_t edge            :1;
+        uint8_t pinctrl         :1;
+        uint8_t interrupt       :1;
+        uint8_t _               :1;
+        uint8_t enable          :1;
+        uint8_t inverter        :1;
+        uint8_t counter_mask    :8;
     } fields;
     uint64_t bits;
 } perf_select;

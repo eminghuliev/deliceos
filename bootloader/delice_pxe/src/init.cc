@@ -53,7 +53,7 @@ extern "C" void __attribute__((optimize("O0"))) start_kernel(){
         //printf("CPU %d\n", cpu::get_apic_id());
     }
     else {
-        printf("CPU %d\n", cpu::get_apic_id());
+        printf("My Rocket CPU Core id: %d\n", cpu::get_apic_id());
     }
     // We will release stack in the end of each core procedure
     uint8_t *stack_wait = (uint8_t*)0x7e00;

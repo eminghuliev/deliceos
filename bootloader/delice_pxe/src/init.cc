@@ -10,7 +10,7 @@
 #include <perfctr.h>
 #include <screen.h>
 
-extern "C" void __attribute__((optimize("O0"))) start_kernel(){
+extern "C" void start_kernel(){
     // Initialize all entries in init_array section
     static_init();
     cpu::disable_interrupt();
@@ -48,8 +48,34 @@ extern "C" void __attribute__((optimize("O0"))) start_kernel(){
         cpu::enable_interrupt();
         apic.init();
         apic.enable_lapic();
+        ::PerfCounter::get_perf();
+        ::PerfCounter::enable_pmi_nmi();
+        for(int ii = 0; ii < 1; ii++){
+            ::PerfCounter::disable_perf_globalctrl();
+            ::PerfCounter::reset();
+            ::PerfCounter::clear();
+            __asm__ volatile ("WBINVD");
+            ::PerfCounter::set_perfselect(::PerfCounter::generate_perf());
+            //::PerfCounter::set_event_counts((1ULL << 48) - 2);
+            //::PerfCounter::set_fixed_ctrl();
+            ::PerfCounter::set_perf_globalctrl();
+            /*::PerfCounter::unoptimized_function(100);
+            intel();
+            __asm__ volatile("lfence;"
+                            "cmp eax, 0x1;"
+                            "je 1f;"
+                            "1: xor ecx, ecx;"
+                            );
+            att();*/
+            uint32_t *addr = (uint32_t*)0x6000;
+            for(int ii = 0; ii < 5; ii++){
+                printf("%lx\n", *addr + ii);
+                }
+            printf("PMC counter val %d\n", PerfCounter::read(0));
+        } 
+        
         // Send IPI to All cores
-        apic.launch_ap(core_id + 1);
+        //apic.launch_ap(core_id + 1);
         //printf("CPU %d\n", cpu::get_apic_id());
     }
     else {

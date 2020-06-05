@@ -50,7 +50,7 @@ extern "C" void start_kernel(){
         apic.enable_lapic();
         ::PerfCounter::get_perf();
         ::PerfCounter::enable_pmi_nmi();
-        for(int ii = 0; ii < 1; ii++){
+        for(int ii = 0; ii < 3; ii++){
             ::PerfCounter::disable_perf_globalctrl();
             ::PerfCounter::reset();
             ::PerfCounter::clear();
@@ -67,19 +67,34 @@ extern "C" void start_kernel(){
                             "1: xor ecx, ecx;"
                             );
             att();*/
-            uint32_t *addr = (uint32_t*)0x6000;
-            for(int ii = 0; ii < 5; ii++){
-                printf("%lx\n", *addr + ii);
-                }
-            printf("PMC counter val %d\n", PerfCounter::read(0));
-        } 
+            //intel();
+            /*__asm__ volatile("nop; nop;nop;call hack;"
+                    "hack: add byte[rsp], 4; ret;");
+            */
+            //att();
+                uint64_t start = cpu::rdtsc();
+            //::PerfCounter::unoptimized_function(5);
+            //__asm__ volatile("nop;nop");
+                intel();
+                __asm__ volatile("lea rsi, [rsb + 2];call rsb;"
+                            "rsb: push rsi; ret;");
+                att();
+                uint64_t stop = cpu::rdtsc();
+            
+            /*uint32_t *addr = (uint32_t*)0x6000;
+            for(int ii = 0; ii < 100; ii++){
+                *(addr + ii) = 0xff41;
+            }*/
+                printf("PMC counter val %d - ", PerfCounter::read(0));
+                printf("Cycles %d\n",stop - start);
+        }
         
         // Send IPI to All cores
         //apic.launch_ap(core_id + 1);
         //printf("CPU %d\n", cpu::get_apic_id());
     }
     else {
-        printf("My Rocket CPU Core id: %d\n", cpu::get_apic_id());
+        printf("Dragon rocket CPU Core id: %d\n", cpu::get_apic_id());
     }
     // We will release stack in the end of each core procedure
     uint8_t *stack_wait = (uint8_t*)0x7e00;

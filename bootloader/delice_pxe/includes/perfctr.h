@@ -25,7 +25,9 @@ typedef union {
 void get_perf();
 void unoptimized_function(int x);
 void unoptimized_function2();
+void get_current_ip();
 uint64_t generate_perf();
+
 
 // PMC definitions
 static inline __attribute__((always_inline)) uint64_t read(uint32_t id){
@@ -48,9 +50,9 @@ static inline __attribute__((always_inline)) void set_fixed_ctrl(){
 }
 
 static inline __attribute__((always_inline)) void set_perf_globalctrl(){
-    cpu::wrmsr(0x38f, 0x000000001);
+    //cpu::wrmsr(0x38f, 0x000000001);
     // Enable to Fix #1
-    //cpu::wrmsr(0x38f, 0x200000001);
+    cpu::wrmsr(0x38f, 0x200000001);
 }
 
 static inline __attribute__((always_inline)) void disable_perf_globalctrl(){
@@ -71,6 +73,7 @@ static inline __attribute__((always_inline)) void disable_noclear(){
 static inline __attribute__((always_inline)) void clear(){
     cpu::wrmsr(0x186, 0x0);
 	cpu::wrmsr(0xc1, 0x0);
+    cpu::wrmsr(0x30a, 0x0);
 }
 
 static inline __attribute__((always_inline)) void reset(){

@@ -19,9 +19,7 @@ extern "C" void start_kernel(){
     serial::Serial serial;
     serial.init();
     //clear_screen();
-    auto core_id = CORE_ID.fetch_add(1, std::memory_order_seq_cst);
-    uint32_t esp;
-    __asm__ ("mov %%esp, %0;" : "=r" (esp));
+    [[maybe_unused]] auto core_id = CORE_ID.fetch_add(1, std::memory_order_seq_cst);
     // Map APIC Base address with UC field
     map_addr(0x13370000000, 
             0xfee00000, 
@@ -50,15 +48,28 @@ extern "C" void start_kernel(){
         apic.enable_lapic();
         ::PerfCounter::get_perf();
         ::PerfCounter::enable_pmi_nmi();
-        ::PerfCounter::disable_perf_globalctrl();
-        ::PerfCounter::reset();
-        ::PerfCounter::clear();
-        ::PerfCounter::set_perf_globalctrl();
-        ::PerfCounter::set_event_counts((1ULL << 48) - 2);
-        ::PerfCounter::set_fixed_ctrl();
-        ::PerfCounter::disable_perf_globalctrl();
-        printf("%lx\n", cpu::rdmsr(0x309));
-        while(1){}
+        for(int ii = 0; ii < 1; ii++){
+            ::PerfCounter::disable_perf_globalctrl();
+            ::PerfCounter::reset();
+            ::PerfCounter::clear();
+            __asm__ volatile("wbinvd");
+            ::PerfCounter::set_perfselect(::PerfCounter::generate_perf());
+            //::PerfCounter::set_event_counts((1ULL << 48) - 2);
+            ::PerfCounter::set_perf_globalctrl();
+            //::PerfCounter::set_fixed_ctrl();
+            /*intel();
+            __asm__ volatile("lea rsi, [rsb + 2];call rsb;"
+                                "rsb: push rsi; ret;");
+            att();*/
+            //
+            intel();
+            __asm__ volatile("mov rsi, 0x40000; mov rdi, 0xdeadbeef;"
+                    "mov qword ptr[rsi], rdi;"
+                    "mov rax, qword ptr [rsi];");
+            att();
+            ::PerfCounter::disable_perf_globalctrl();
+            printf("PMC counter val %d\n", PerfCounter::read(0));
+        }
         // Send IPI to All cores
         //apic.launch_ap(core_id + 1);
         //printf("CPU %d\n", cpu::get_apic_id());

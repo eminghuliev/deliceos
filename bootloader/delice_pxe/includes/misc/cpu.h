@@ -39,12 +39,15 @@ struct e20_entry {
     uint32_t type;
     uint32_t res0;
 }__attribute__((packed));
-static inline __attribute__((always_inline)) uint32_t apic_read(uint32_t reg)
+
+[[gnu::always_inline]]
+static inline uint32_t apic_read(uint32_t reg)
 {
     uint32_t *apic_base = (uint32_t*) 0x13370000000; // APIC base address
     return *((volatile uint32_t *)(apic_base + (reg / 4)));
 }
-static inline __attribute__((always_inline)) int apic_write(uint32_t reg, uint32_t v)
+[[gnu::always_inline]]
+static inline int apic_write(uint32_t reg, uint32_t v)
 {
     volatile uint32_t *addr;
     uint32_t *apic_base = (uint32_t*) 0x13370000000; // APIC base address
@@ -54,29 +57,30 @@ static inline __attribute__((always_inline)) int apic_write(uint32_t reg, uint32
 
     return 0;
 }
-static inline __attribute__((always_inline)) size_t get_apic_id(){
+[[gnu::always_inline]]
+static inline size_t get_apic_id(){
     return (size_t)((apic_read(0x20) >> 24) & 0xff);
 }
-
-static inline __attribute__((always_inline)) void eoi(){
+[[gnu::always_inline]]
+static inline void eoi(){
    cpu::apic_write(0xb0, 0x0); 
 }
 
-
-static inline __attribute__((always_inline)) void invlpg(void* m)
+[[gnu::always_inline]]
+static inline void invlpg(void* m)
 {
     asm volatile ( "invlpg (%0)" : : "b"(m) : "memory" );
 }
-
-static inline __attribute__((always_inline)) std::tuple<uint32_t, uint32_t, uint32_t, uint32_t> cpuid(uint32_t eax_ , uint32_t ecx_){
+[[gnu::always_inline]]
+static inline std::tuple<uint32_t, uint32_t, uint32_t, uint32_t> cpuid(uint32_t eax_ , uint32_t ecx_){
     uint32_t eax, ebx, ecx, edx;
     __asm__ volatile("cpuid"
     : "=a" (eax), "=b" (ebx), "=c" (ecx), "=d" (edx)
     : "a" (eax_), "c" (ecx_));
     return {eax, ebx, edx, ecx};
 }
-
-static inline __attribute__((always_inline)) uint64_t rdmsr(uint32_t msr){
+[[gnu::always_inline]]
+static inline uint64_t rdmsr(uint32_t msr){
     uint32_t high, low;
     __asm__ ("rdmsr"
             : "=d"(high), "=a"(low)
@@ -84,8 +88,8 @@ static inline __attribute__((always_inline)) uint64_t rdmsr(uint32_t msr){
             );
     return ((uint64_t)high << 32) | low;
 }
-
-static inline __attribute__((always_inline)) void wrmsr(uint32_t msr, uint64_t value)
+[[gnu::always_inline]]
+static inline void wrmsr(uint32_t msr, uint64_t value)
 {
     uint32_t low = value & 0xFFFFFFFF;
     uint32_t high = value >> 32;
@@ -95,36 +99,58 @@ static inline __attribute__((always_inline)) void wrmsr(uint32_t msr, uint64_t v
         : "c"(msr), "a"(low), "d"(high)
     );
 }
-static inline __attribute__((always_inline)) void halt(){
+
+static __inline__ int64_t rdtsc_s(void)
+{
+    unsigned a, d; 
+    asm volatile("cpuid" ::: "%rax", "%rbx", "%rcx", "%rdx");
+    asm volatile("rdtsc" : "=a" (a), "=d" (d)); 
+    return ((unsigned long)a) | (((unsigned long)d) << 32); 
+}
+
+static __inline__ int64_t rdtsc_e(void)
+{
+    unsigned a, d; 
+    asm volatile("rdtscp" : "=a" (a), "=d" (d)); 
+    asm volatile("cpuid" ::: "%rax", "%rbx", "%rcx", "%rdx");
+    return ((unsigned long)a) | (((unsigned long)d) << 32); 
+}
+
+[[gnu::always_inline]]
+static inline void halt(){
     __asm__ ("hlt");
 }
 
-static inline __attribute__((always_inline)) bool is_bsp(){
+[[gnu::always_inline]]
+static inline bool is_bsp(){
     return (rdmsr(0x1b)  & (1 << 8)) != 0;
 }
 
-static inline __attribute__((always_inline)) void disable_interrupt(){
+[[gnu::always_inline]]
+static inline void disable_interrupt(){
 	__asm__ __volatile__ ("cli":::"memory", "cc");	
 }
-static inline __attribute__((always_inline)) void enable_interrupt(){
+
+[[gnu::always_inline]]
+static inline void enable_interrupt(){
 	__asm__ __volatile__ ("sti":::"memory", "cc");	
 }
-
-static inline __attribute__((always_inline)) void lfence(){
+[[gnu::always_inline]]
+static inline void lfence(){
     asm volatile("lfence\n\t"
                  :
                  :
                  : "memory");
 }
-
-static inline __attribute__((always_inline)) void mfence(){
+[[gnu::always_inline]]
+static inline void mfence(){
     asm volatile("mfence\n\t"
                  :
                  :
                  : "memory");
 }
-
-static inline __attribute__((always_inline)) uint64_t rdtsc(void)
+[[gnu::always_inline]]
+static inline uint64_t rdtsc(void)
 {
     uint32_t high, low;
     __asm__ __volatile__ ("rdtsc" : "=a"(low), "=d"(high));

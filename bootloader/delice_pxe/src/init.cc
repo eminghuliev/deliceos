@@ -10,7 +10,10 @@
 #include <perfctr.h>
 #include <screen.h>
 
-extern "C" void start_kernel(){
+#define BUF_SIZE (64*1024)
+static char buf[BUF_SIZE];
+
+extern "C" void __attribute__((optimize("O0"))) start_kernel(){
     // Initialize all entries in init_array section
     static_init();
     cpu::disable_interrupt();
@@ -18,7 +21,6 @@ extern "C" void start_kernel(){
     // Set-up serial interface
     serial::Serial serial;
     serial.init();
-    //clear_screen();
     [[maybe_unused]] auto core_id = CORE_ID.fetch_add(1, std::memory_order_seq_cst);
     // Map APIC Base address with UC field
     map_addr(0x13370000000, 
@@ -46,6 +48,13 @@ extern "C" void start_kernel(){
         cpu::enable_interrupt();
         apic.init();
         apic.enable_lapic();
+//         intel();
+//         // disable cache
+//         __asm__ volatile ("mov eax, cr0;"
+//                           "or eax, (0x1 << 30);"
+//                           "mov cr0, eax;");
+//         att();
+
         ::PerfCounter::get_perf();
         ::PerfCounter::enable_pmi_nmi();
         for(int ii = 0; ii < 1; ii++){
@@ -61,13 +70,14 @@ extern "C" void start_kernel(){
             __asm__ volatile("lea rsi, [rsb + 2];call rsb;"
                                 "rsb: push rsi; ret;");
             att();*/
-            //
-            intel();
-            __asm__ volatile("mov rsi, 0x40000; mov rdi, 0xdeadbeef;"
-                    "mov qword ptr[rsi], rdi;"
-                    "mov rax, qword ptr [rsi];");
-            att();
+            // Enable Indirect Branch Predictor Barrier
+            //cpu::wrmsr(0x48, 0x02);
+            //cpu::wrmsr(0x49, 0x01);
+            //__asm__ volatile ("clflush (%0)" :: "r"(&(buff[25])));
+            uint64_t val = cpu::rdmsr(0x1d9);
+            ::PerfCounter::unoptimized_function2(buf, BUF_SIZE);
             ::PerfCounter::disable_perf_globalctrl();
+            printf("VAL %d\n", val);
             printf("PMC counter val %d\n", PerfCounter::read(0));
         }
         // Send IPI to All cores

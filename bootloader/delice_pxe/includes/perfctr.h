@@ -4,6 +4,14 @@
 #include <printf.h>
 namespace PerfCounter {
 
+
+#define NOPS \
+                "nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\n" \
+                "nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\n" \
+                "nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\n" \
+                "nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\n" \
+                "nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\n"
+
 typedef union {
     struct {
         uint8_t event           :8;
@@ -23,8 +31,8 @@ typedef union {
 
 // Definitions 
 void get_perf();
-void unoptimized_function(int x);
-void unoptimized_function2();
+void unoptimized_function(uint8_t x);
+void unoptimized_function2(void *addr, unsigned long size);
 void get_current_ip();
 uint64_t generate_perf();
 

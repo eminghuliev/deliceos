@@ -169,29 +169,6 @@ early_page:
     mov edi, FIRST_PD_BASE
     call fill_pd
 
-    ; Initialize for 0x1337deadbeef
-    ;mov eax, 0x200000 + 0xadbef
-    ;mov dword[eax], 0xdeadbeaf
-    
-    ;xor eax, eax
-    ;or  eax, PAGE_PRESENT | PAGE_WRITE
-    ;or  eax, 0x22000 ; FIRST_PDPT_BASE
-    ;mov edi, FIRST_PML4_BASE + (2 * 8)
-    ;mov dword[edi], eax
-    
-    ;xor eax, eax
-    ;or  eax, PAGE_PRESENT | PAGE_WRITE
-    ;or  eax, 0x23000 ; FIRST_PD_BASE
-    ;mov edi, 0x22000 + (0xcd * 8)
-    ;mov dword[edi], eax
-    
-    ;xor eax, eax
-    ;mov ebx, 0x200000
-    ;mov edi, 0x23000 + (0x1ef * 8)
-    ;or  eax, PAGE_PRESENT | PAGE_WRITE | PAGE_SIZE
-    ;or  eax, ebx
-    ;mov dword[edi], eax
-
     ret
 
 align 4

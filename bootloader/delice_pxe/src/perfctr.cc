@@ -10,7 +10,7 @@ void get_perf(){
 
 uint64_t generate_perf(){
     perf_select val = {};
-    val.fields.event = 0xc5;
+    val.fields.event = 0xc4;
     val.fields.umask = 0x00;
     val.fields.usr   = 1;
     val.fields.os    = 1;
@@ -50,9 +50,6 @@ int __attribute__((optimize("O0"))) search(int arr[], int n, int x)
 }
 
 void __attribute__((optimize("O0"))) unoptimized_function(int x){
-    intel();
-    //__asm__ volatile("add byte ptr[rsp + 8], 0x2;");
-    att();
     /*uint32_t *addr = (uint32_t*)0xb8000;
     for(int ii = 0; ii < 250; ii++){
         if(*(addr + ii)){

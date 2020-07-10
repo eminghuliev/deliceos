@@ -41,10 +41,10 @@ static inline __attribute__((always_inline)) void enable_pmi_nmi(){
 }
 
 static inline __attribute__((always_inline)) void set_event_counts(uint64_t val){ 
-    cpu::wrmsr(0x30a, val);
+    cpu::wrmsr(0x309, val);
 }
 static inline __attribute__((always_inline)) void set_fixed_ctrl(){
-    cpu::wrmsr(0x38d, 0xb0);
+    cpu::wrmsr(0x38d, 0xb);
 }
 
 static inline __attribute__((always_inline)) void set_perf_globalctrl(){

@@ -50,45 +50,21 @@ extern "C" void start_kernel(){
         apic.enable_lapic();
         ::PerfCounter::get_perf();
         ::PerfCounter::enable_pmi_nmi();
-        for(int ii = 0; ii < 3; ii++){
-            ::PerfCounter::disable_perf_globalctrl();
-            ::PerfCounter::reset();
-            ::PerfCounter::clear();
-            __asm__ volatile ("WBINVD");
-            ::PerfCounter::set_perfselect(::PerfCounter::generate_perf());
-            //::PerfCounter::set_event_counts((1ULL << 48) - 2);
-            //::PerfCounter::set_fixed_ctrl();
-            ::PerfCounter::set_perf_globalctrl();
-            /*::PerfCounter::unoptimized_function(100);
-            intel();
-            __asm__ volatile("lfence;"
-                            "cmp eax, 0x1;"
-                            "je 1f;"
-                            "1: xor ecx, ecx;"
-                            );
-            att();*/
-            //intel();
-            /*__asm__ volatile("nop; nop;nop;call hack;"
-                    "hack: add byte[rsp], 4; ret;");
-            */
-            //att();
-                uint64_t start = cpu::rdtsc();
-            //::PerfCounter::unoptimized_function(5);
-            //__asm__ volatile("nop;nop");
-                intel();
-                __asm__ volatile("lea rsi, [rsb + 2];call rsb;"
-                            "rsb: push rsi; ret;");
-                att();
-                uint64_t stop = cpu::rdtsc();
-            
-            /*uint32_t *addr = (uint32_t*)0x6000;
-            for(int ii = 0; ii < 100; ii++){
-                *(addr + ii) = 0xff41;
-            }*/
-                printf("PMC counter val %d - ", PerfCounter::read(0));
-                printf("Cycles %d\n",stop - start);
+        ::PerfCounter::reset();
+        ::PerfCounter::clear();
+        //__asm__("wrmsr" : : "c"(0x38f), "a"(0x1), "d"(0x1));
+        ::PerfCounter::set_perfselect(::PerfCounter::generate_perf());
+        ::PerfCounter::set_event_counts((1ULL << 48) - 2);
+        ::PerfCounter::set_fixed_ctrl();
+        ::PerfCounter::set_perf_globalctrl();
+        __asm__ volatile("nop; nop;nop;nop");
+        ::PerfCounter::unoptimized_function2();
+        while(cpu::rdmsr(0x38e) == 0){}
+        if(cpu::rdmsr(0x38e) != 0){
+            printf("What di fak? ass %d\n", cpu::rdmsr(0x309));
+            printf("PMC counter val %d\n", PerfCounter::read(0));
         }
-        
+        ::PerfCounter::disable_perf_globalctrl();
         // Send IPI to All cores
         //apic.launch_ap(core_id + 1);
         //printf("CPU %d\n", cpu::get_apic_id());
